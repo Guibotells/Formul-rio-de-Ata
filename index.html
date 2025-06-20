@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formulário Ata de Reunião</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: #f5f7fa;
+      color: #333;
+      padding: 20px;
+    }
+    .container {
+      max-width: 960px;
+      margin: auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+      padding: 30px;
+    }
+    h1, h2 {
+      color: #2b2d42;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 600;
+    }
+    input[type="text"], input[type="date"], input[type="time"], textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    textarea { resize: vertical; min-height: 60px; }
+    .section { margin-bottom: 30px; }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .row input, .row textarea { flex: 1; }
+    button {
+      background-color: #2b2d42;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 5px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .items .item {
+      background: #edf2f4;
+      padding: 8px;
+      border-radius: 4px;
+      margin-bottom: 5px;
+    }
+    #gerarPDF {
+      display: block;
+      margin: 20px auto 0;
+      padding: 12px 20px;
+      font-size: 16px;
+    }
+    .logo {
+      max-height: 80px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Copa_Energia_logo.png/320px-Copa_Energia_logo.png" alt="Logo" class="logo" />
+    <h1>Formulário de Ata de Reunião</h1>
+
+    <div class="section">
+      <h2>1. Informações da Reunião</h2>
+      <label>Título da Reunião:</label>
+      <input type="text" id="titulo" />
+
+      <label>Data:</label>
+      <input type="date" id="data" />
+
+      <label>Local:</label>
+      <input type="text" id="local" />
+
+      <label>Organizador / Facilitador:</label>
+      <input type="text" id="organizador" />
+    </div>
+
+    <div class="section">
+      <h2>2. Participantes</h2>
+      <div class="row">
+        <input type="text" id="nomeParticipante" placeholder="Nome" />
+        <input type="text" id="empresaParticipante" placeholder="Empresa" />
+        <button type="button" onclick="addParticipante()">+</button>
+      </div>
+      <div id="listaParticipantes" class="items"></div>
+    </div>
+
+    <div class="section">
+      <h2>3. Pauta da Reunião</h2>
+      <div class="row">
+        <textarea id="pauta" placeholder="Adicionar pauta..."></textarea>
+        <button type="button" onclick="addPauta()">+</button>
+      </div>
+      <div id="listaPauta" class="items"></div>
+    </div>
+
+    <div class="section">
+      <h2>4. Decisões Tomadas</h2>
+      <div class="row">
+        <textarea id="decisao" placeholder="Adicionar decisão..."></textarea>
+        <button type="button" onclick="addDecisao()">+</button>
+      </div>
+      <div id="listaDecisoes" class="items"></div>
+    </div>
+
+    <div class="section">
+      <h2>5. Ações e Responsabilidades</h2>
+      <div class="row">
+        <input type="text" id="acao" placeholder="Ação" />
+        <input type="text" id="responsavel" placeholder="Responsável" />
+        <input type="date" id="prazo" />
+        <button type="button" onclick="addAcao()">+</button>
+      </div>
+      <div id="listaAcoes" class="items"></div>
+    </div>
+
+    <div class="section">
+      <h2>6. Informações Adicionais</h2>
+      <label>Data e hora da próxima reunião:</label>
+      <div class="row">
+        <input type="date" id="proximaReuniao" />
+        <input type="time" id="horaProxima" />
+      </div>
+      <label>Observações:</label>
+      <textarea id="observacoes" placeholder="Adicionar observações..."></textarea>
+    </div>
+
+    <button id="gerarPDF" onclick="gerarPDF()">Gerar PDF</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script>
+    const participantes = [], pautas = [], decisoes = [], acoes = [];
+
+    function addParticipante() {
+      const nome = document.getElementById('nomeParticipante').value;
+      const empresa = document.getElementById('empresaParticipante').value;
+      if (nome && empresa) {
+        participantes.push(`${nome} (${empresa})`);
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.textContent = `${nome} (${empresa})`;
+        document.getElementById('listaParticipantes').appendChild(div);
+        document.getElementById('nomeParticipante').value = "";
+        document.getElementById('empresaParticipante').value = "";
+      }
+    }
+
+    function addPauta() {
+      const texto = document.getElementById('pauta').value;
+      if (texto) {
+        pautas.push(texto);
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.textContent = texto;
+        document.getElementById('listaPauta').appendChild(div);
+        document.getElementById('pauta').value = "";
+      }
+    }
+
+    function addDecisao() {
+      const texto = document.getElementById('decisao').value;
+      if (texto) {
+        decisoes.push(texto);
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.textContent = texto;
+        document.getElementById('listaDecisoes').appendChild(div);
+        document.getElementById('decisao').value = "";
+      }
+    }
+
+    function addAcao() {
+      const acao = document.getElementById('acao').value;
+      const resp = document.getElementById('responsavel').value;
+      const prazo = document.getElementById('prazo').value;
+      if (acao && resp && prazo) {
+        acoes.push([acao, resp, prazo]);
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.textContent = `${acao} - Resp: ${resp} - Até: ${prazo}`;
+        document.getElementById('listaAcoes').appendChild(div);
+        document.getElementById('acao').value = "";
+        document.getElementById('responsavel').value = "";
+        document.getElementById('prazo').value = "";
+      }
+    }
+
+    async function gerarPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text("Ata de Reunião", 105, 20, { align: "center" });
+
+      doc.autoTable({ head: [["Local da reunião", "Data", "Horário"]],
+        body: [[
+          document.getElementById('local').value,
+          document.getElementById('data').value,
+          document.getElementById('horaProxima').value
+        ]], startY: 30, theme: 'grid' });
+
+      doc.autoTable({ head: [["Tema principal"]],
+        body: [[document.getElementById('titulo').value]], startY: doc.lastAutoTable.finalY + 10, theme: 'grid' });
+
+      doc.autoTable({ head: [["Participantes - Empresa / Área"]],
+        body: [[participantes.join(", ")]], startY: doc.lastAutoTable.finalY + 10, theme: 'grid' });
+
+      const decisoesList = decisoes.length ? decisoes.map(d => [d]) : [["-"]];
+      doc.autoTable({ head: [["Decisões Tomadas"]],
+        body: decisoesList, startY: doc.lastAutoTable.finalY + 10, theme: 'grid' });
+
+      const acoesFormatadas = acoes.length ? acoes.map(([a, r, p]) => [a, r, p]) : [["-", "-", "-"]];
+      doc.autoTable({ head: [["Ação", "Responsável", "Prazo"]],
+        body: acoesFormatadas, startY: doc.lastAutoTable.finalY + 10, theme: 'grid' });
+
+      doc.autoTable({ head: [["Próxima reunião", "Data", "Horário"]],
+        body: [[
+          document.getElementById('titulo').value,
+          document.getElementById('proximaReuniao').value,
+          document.getElementById('horaProxima').value
+        ]], startY: doc.lastAutoTable.finalY + 10, theme: 'grid' });
+
+      doc.autoTable({ head: [["Observações"]],
+        body: [[document.getElementById('observacoes').value || "-"]],
+        startY: doc.lastAutoTable.finalY + 10, theme: 'grid' });
+
+      doc.setFontSize(10);
+      doc.text("Copa Energia - www.copaenergia.com.br", 105, 285, { align: "center" });
+      doc.save("Ata_Reuniao.pdf");
+    }
+  </script>
+</body>
+</html>
